@@ -35,11 +35,11 @@ test.describe('links', () => {
     await expect.poll(() => page.url()).toBe(`${ORIGIN}/article?id=7`);
   });
 
-  test('copies the page as a Markdown link', async ({ page, open }) => {
-    await open('/article', '<p>Hi</p>', { title: 'My [draft] page' });
+  test('copies the page as a Markdown link, escaping brackets, backslashes and parentheses', async ({ page, open }) => {
+    await open('/wiki/Mercury_(planet)', '<p>Hi</p>', { title: 'My [draft] page C:\\' });
     await page.keyboard.press('Alt+Shift+KeyC');
     await expect(toast(page)).toHaveText('Copied Markdown link');
-    expect(await clipboard(page)).toBe(`[My \\[draft\\] page](${ORIGIN}/article)`);
+    expect(await clipboard(page)).toBe(`[My \\[draft\\] page C:\\\\](${ORIGIN}/wiki/Mercury_%28planet%29)`);
   });
 
   test('redirect wrappers are skipped', async ({ page, open, serve }) => {
