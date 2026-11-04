@@ -75,8 +75,11 @@
     description: 'Copies the page as [Title](URL), with tracking parameters removed.',
     run() {
       command('Copy page as Markdown link', 'alt+shift+c', async () => {
-        const title = document.title.replace(/[[\]]/g, '\\$&');
-        const copied = await copyText(`[${title}](${cleanLocation()})`);
+        // Escape backslashes as well as brackets, or a title ending in "\" would escape the closing bracket.
+        const title = document.title.replace(/[\\[\]]/g, '\\$&');
+        // Parentheses would end the Markdown link early, so percent-encode them.
+        const url = cleanLocation().replace(/\(/g, '%28').replace(/\)/g, '%29');
+        const copied = await copyText(`[${title}](${url})`);
         toast(copied ? 'Copied Markdown link' : 'Copy failed');
       });
     },
