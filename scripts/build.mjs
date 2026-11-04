@@ -28,7 +28,9 @@ function chromium(base) {
 
 function safari(base) {
   const { browser_specific_settings: _firefoxOnly, ...rest } = base;
-  return { ...rest, background: { service_worker: base.background.service_worker } };
+  // Safari always opens extension settings in its own window and rejects `open_in_tab`.
+  const { open_in_tab: _unsupported, ...optionsUi } = base.options_ui;
+  return { ...rest, options_ui: optionsUi, background: { service_worker: base.background.service_worker } };
 }
 
 function firefox(base) {

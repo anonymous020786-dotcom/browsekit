@@ -16,7 +16,7 @@ The Chromium packages share the same code and declare `minimum_chrome_version` 1
 
 Safari extensions ship inside a Mac app, so they need Xcode, which only runs on macOS. The **Safari build** workflow (`.github/workflows/safari.yml`) does this on a GitHub macOS runner, on every CI run and release:
 
-1. `xcrun safari-web-extension-converter dist/safari` wraps the extension in an Xcode project (bundle ID `io.github.anonymous020786-dotcom.browsekit`).
+1. `xcrun safari-web-extension-converter dist/safari` wraps the extension in an Xcode project (bundle ID `io.github.anonymous020786.browsekit`).
 2. `xcodebuild` compiles it **unsigned** and the app is zipped as `browsekit-safari-macos-<version>-unsigned.zip`.
 
 The unsigned app is fine for testing (see the README). To publish on the Mac App Store you need an Apple Developer account ($99/year):

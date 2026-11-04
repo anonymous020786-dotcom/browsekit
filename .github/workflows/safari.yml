@@ -10,6 +10,9 @@ on:
 permissions:
   contents: read
 
+env:
+  APP_ID: io.github.anonymous020786.browsekit
+
 jobs:
   safari:
     name: Safari (macOS, unsigned)
@@ -29,8 +32,18 @@ jobs:
         run: |
           xcrun safari-web-extension-converter dist/safari \
             --project-location build --app-name Browsekit \
-            --bundle-identifier io.github.anonymous020786-dotcom.browsekit \
+            --bundle-identifier "$APP_ID" \
             --swift --macos-only --copy-resources --no-open --no-prompt --force
+
+      # Xcode requires the extension's bundle ID to start with the app's; set both explicitly
+      # instead of relying on the converter's derived names.
+      - name: Align bundle identifiers
+        run: |
+          project=build/Browsekit/Browsekit.xcodeproj/project.pbxproj
+          echo "Before:"; grep "PRODUCT_BUNDLE_IDENTIFIER" "$project" | sort -u
+          sed -i '' -E "/PRODUCT_BUNDLE_IDENTIFIER = .*[Ee]xtension/ s/PRODUCT_BUNDLE_IDENTIFIER = [^;]*;/PRODUCT_BUNDLE_IDENTIFIER = \"$APP_ID.Extension\";/" "$project"
+          sed -i '' -E "/PRODUCT_BUNDLE_IDENTIFIER = .*[Ee]xtension/! s/PRODUCT_BUNDLE_IDENTIFIER = [^;]*;/PRODUCT_BUNDLE_IDENTIFIER = \"$APP_ID\";/" "$project"
+          echo "After:"; grep "PRODUCT_BUNDLE_IDENTIFIER" "$project" | sort -u
 
       - name: Compile with Xcode (unsigned)
         run: |
