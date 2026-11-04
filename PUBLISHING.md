@@ -1,15 +1,31 @@
 # Publishing Browsekit
 
-`npm run build` produces store-ready packages in `dist/`:
+`npm run build` produces a package for each store in `dist/`:
 
-| Package | Stores |
-| --- | --- |
-| `browsekit-chrome-<version>.zip` | Chrome Web Store, Microsoft Edge Add-ons, Opera add-ons (Brave and Vivaldi install from the Chrome Web Store) |
-| `browsekit-firefox-<version>.zip` | Firefox Add-ons (addons.mozilla.org), desktop and Android |
+| Package | Store | Notes |
+| --- | --- | --- |
+| `browsekit-chrome-<version>.zip` | [Chrome Web Store](https://chrome.google.com/webstore/devconsole) | Brave and Vivaldi users install from here too |
+| `browsekit-edge-<version>.zip` | [Microsoft Edge Add-ons](https://partner.microsoft.com/dashboard/microsoftedge) | |
+| `browsekit-opera-<version>.zip` | [Opera add-ons](https://addons.opera.com/developer/) | |
+| `browsekit-firefox-<version>.zip` | [Firefox Add-ons](https://addons.mozilla.org/developers/) | Desktop and Android |
+| `browsekit-safari-macos-<version>-unsigned.zip` | Mac App Store, via Xcode | Built on macOS by CI, see below |
 
-The builds are reproducible: the same source always gives byte-identical zips.
+The Chromium packages share the same code and declare `minimum_chrome_version` 110. Firefox requires version 140 (142 on Android). The builds are reproducible: the same source always gives byte-identical zips.
 
-**Safari** needs Xcode on a Mac. Run `xcrun safari-web-extension-converter dist/chrome` to wrap the build in an app, then submit it to the App Store. This step isn't automated.
+### Safari
+
+Safari extensions ship inside a Mac app, so they need Xcode, which only runs on macOS. The **Safari build** workflow (`.github/workflows/safari.yml`) does this on a GitHub macOS runner, on every CI run and release:
+
+1. `xcrun safari-web-extension-converter dist/safari` wraps the extension in an Xcode project (bundle ID `io.github.anonymous020786.browsekit`).
+2. `xcodebuild` compiles it **unsigned** and the app is zipped as `browsekit-safari-macos-<version>-unsigned.zip`.
+
+The unsigned app is fine for testing (see the README). To publish on the Mac App Store you need an Apple Developer account ($99/year):
+
+1. On a Mac, run the same converter command, then open the generated project in Xcode.
+2. Pick your team under **Signing & Capabilities** for both the app and the extension targets.
+3. **Product → Archive**, then **Distribute App → App Store Connect**, and complete the listing in App Store Connect.
+
+iOS and iPadOS Safari need the same steps without `--macos-only` in the converter command.
 
 ## Releasing
 

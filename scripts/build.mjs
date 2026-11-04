@@ -1,8 +1,11 @@
-// Builds store-ready packages for each browser family from extension/:
-//   dist/chrome/   + dist/browsekit-chrome-<version>.zip    Chrome, Edge, Brave, Opera, Vivaldi
-//   dist/firefox/  + dist/browsekit-firefox-<version>.zip   Firefox (desktop and Android)
-// The source manifest carries settings for both; each build keeps only what its browser understands,
-// so neither store shows manifest warnings. Zips are reproducible: sorted entries, fixed timestamps.
+// Builds a package for each popular browser from extension/ into dist/<target>/ and dist/browsekit-<target>-<version>.zip:
+//   chrome   Chrome Web Store (also how Brave and Vivaldi users install)
+//   edge     Microsoft Edge Add-ons
+//   opera    Opera add-ons
+//   firefox  Firefox Add-ons, desktop and Android
+//   safari   folder only: the input for Apple's Xcode converter (CI does this on macOS; see PUBLISHING.md)
+// The source manifest carries settings for every browser; each build keeps only what its browser understands,
+// so no store shows manifest warnings. Zips are reproducible: sorted entries, fixed timestamps.
 // Usage: node scripts/build.mjs
 import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
@@ -15,14 +18,31 @@ const dist = join(root, 'dist');
 
 const manifest = JSON.parse(readFileSync(join(source, 'manifest.json'), 'utf8'));
 
+// Oldest Chromium with every API Browsekit relies on (promise-based chrome.* APIs, top-level await in the popup).
+const MINIMUM_CHROMIUM = '110';
+
+function chromium(base) {
+  const { browser_specific_settings: _firefoxOnly, ...rest } = base;
+  return { ...rest, minimum_chrome_version: MINIMUM_CHROMIUM, background: { service_worker: base.background.service_worker } };
+}
+
+function safari(base) {
+  const { browser_specific_settings: _firefoxOnly, ...rest } = base;
+  // Safari always opens extension settings in its own window and rejects `open_in_tab`.
+  const { open_in_tab: _unsupported, ...optionsUi } = base.options_ui;
+  return { ...rest, options_ui: optionsUi, background: { service_worker: base.background.service_worker } };
+}
+
+function firefox(base) {
+  return { ...base, background: { scripts: base.background.scripts } };
+}
+
 const TARGETS = {
-  chrome(base) {
-    const { browser_specific_settings: _firefoxOnly, ...rest } = base;
-    return { ...rest, background: { service_worker: base.background.service_worker } };
-  },
-  firefox(base) {
-    return { ...base, background: { scripts: base.background.scripts } };
-  },
+  chrome: { transform: chromium, zip: true },
+  edge: { transform: chromium, zip: true },
+  opera: { transform: chromium, zip: true },
+  firefox: { transform: firefox, zip: true },
+  safari: { transform: safari, zip: false },
 };
 
 function listFiles(directory) {
@@ -91,10 +111,14 @@ function zip(files) {
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist);
 
-for (const [target, transform] of Object.entries(TARGETS)) {
+for (const [target, { transform, zip: makeZip }] of Object.entries(TARGETS)) {
   const outDir = join(dist, target);
   cpSync(source, outDir, { recursive: true });
   writeFileSync(join(outDir, 'manifest.json'), `${JSON.stringify(transform(manifest), null, 2)}\n`);
+  if (!makeZip) {
+    console.log(`${`${target}/`.padEnd(32)} folder for the Xcode converter`);
+    continue;
+  }
 
   const files = listFiles(outDir)
     .map(path => ({ name: relative(outDir, path).split(sep).join('/'), data: readFileSync(path) }))
