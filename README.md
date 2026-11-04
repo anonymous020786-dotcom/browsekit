@@ -6,7 +6,7 @@
 
 A modular, open-source browser extension that adds 105 small power-user features to every website. Each one can be switched on or off: reader mode, link hints, a command palette, video speed control, a highlighter, table sorting, tracking-parameter removal, and much more.
 
-- **Works in:** Chrome, Edge, Brave, Opera, Vivaldi and Firefox (desktop and Android), on Manifest V3.
+- **Works in:** Chrome, Edge, Firefox (desktop and Android), Safari (macOS), Opera, Brave and Vivaldi, on Manifest V3.
 - **No dependencies, no tracking:** the extension is plain JavaScript, and nothing leaves your device (see [Privacy](#privacy)).
 - **Tested in a real browser:** 39 Playwright tests run against the shipped package on every push.
 
@@ -14,10 +14,15 @@ A modular, open-source browser extension that adds 105 small power-user features
 
 ### From a release
 
-Download the zip for your browser from the [latest release](../../releases/latest):
+Download the file for your browser from the [latest release](../../releases/latest):
 
-- **Chrome, Edge, Brave, Opera, Vivaldi:** unzip `browsekit-chrome-<version>.zip`. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and pick the unzipped folder.
-- **Firefox:** open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on**, and pick `browsekit-firefox-<version>.zip`. To install it permanently, use the Firefox Add-ons listing once it's published.
+| Browser | File | How to install |
+| --- | --- | --- |
+| Chrome, Brave, Vivaldi | `browsekit-chrome-<version>.zip` | Unzip. Open `chrome://extensions` (`brave://extensions`, `vivaldi://extensions`), turn on **Developer mode**, click **Load unpacked**, pick the folder. |
+| Microsoft Edge | `browsekit-edge-<version>.zip` | Unzip. Open `edge://extensions`, turn on **Developer mode**, click **Load unpacked**, pick the folder. |
+| Opera | `browsekit-opera-<version>.zip` | Unzip. Open `opera://extensions`, turn on **Developer mode**, click **Load unpacked**, pick the folder. |
+| Firefox (desktop) | `browsekit-firefox-<version>.zip` | Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on**, pick the zip. This lasts until Firefox restarts; for a permanent install, use the Firefox Add-ons listing once it's published. |
+| Safari (macOS) | `browsekit-safari-macos-<version>-unsigned.zip` | Unzip and open `Browsekit.app` once. In Safari, enable **Settings → Advanced → Show features for web developers**, then **Develop → Allow Unsigned Extensions**, and turn on Browsekit under **Settings → Extensions**. Safari forgets the unsigned setting when it quits; the App Store version won't need it. |
 
 ### From source
 
@@ -66,7 +71,7 @@ npm run verify        # everything CI runs: registry check, build, Firefox lint,
 | Command | What it does |
 | --- | --- |
 | `npm run check` | Validates feature ids, categories and shortcut conflicts |
-| `npm run build` | Writes store-ready, reproducible zips for Chromium browsers and Firefox to `dist/` |
+| `npm run build` | Writes reproducible packages for Chrome, Edge, Opera and Firefox, plus the Safari source folder, to `dist/` |
 | `npm run lint:firefox` | Lints the Firefox build with Mozilla's addons.mozilla.org rules |
 | `npm test` | Runs the Playwright browser tests against `extension/` |
 | `npm run test:headed` | Same, with a visible browser window |
