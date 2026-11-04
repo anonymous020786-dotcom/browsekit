@@ -1,0 +1,23 @@
+{
+  "name": "browsekit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Development tooling for the Browsekit browser extension. The extension itself lives in extension/ and has no dependencies.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/check-features.mjs",
+    "build": "node scripts/build.mjs",
+    "lint:firefox": "web-ext lint --source-dir dist/firefox --warnings-as-errors",
+    "test": "npm run check && playwright test",
+    "test:headed": "playwright test --headed",
+    "verify": "npm run check && npm run build && npm run lint:firefox && playwright test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "web-ext": "^10.8.0"
+  }
+}

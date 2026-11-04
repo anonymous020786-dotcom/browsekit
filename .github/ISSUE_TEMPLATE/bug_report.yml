@@ -1,0 +1,34 @@
+name: Bug report
+description: A feature does not work, or breaks a website.
+labels: [bug]
+body:
+  - type: input
+    id: feature
+    attributes:
+      label: Feature
+      description: Its name from the settings page, e.g. "Reader mode".
+    validations:
+      required: true
+  - type: input
+    id: site
+    attributes:
+      label: Website
+      description: A public address where it happens, if any.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: Chrome 142, Firefox 145, Edge 142…
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Browsekit version
+      description: Shown on chrome://extensions or about:addons.

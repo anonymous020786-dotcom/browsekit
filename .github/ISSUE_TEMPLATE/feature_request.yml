@@ -1,0 +1,15 @@
+name: Feature idea
+description: Suggest a new feature or site pack.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would it help you do?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How might it work?
+      description: Shortcut, palette command, automatic, which sites…

@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # Waiting a week before proposing a new version keeps freshly published (possibly compromised) releases out.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      dev-dependencies:
+        patterns: ['*']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7

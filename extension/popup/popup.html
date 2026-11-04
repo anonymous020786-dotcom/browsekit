@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Browsekit</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <label class="site">
+    <span>
+      <strong>Enabled on this site</strong>
+      <span id="site-name" class="muted"></span>
+    </span>
+    <input id="site-toggle" type="checkbox">
+  </label>
+
+  <h2>Tabs in this window</h2>
+  <div class="grid">
+    <button type="button" data-action="copy-urls">Copy all URLs</button>
+    <button type="button" data-action="copy-urls-markdown">Copy as Markdown</button>
+    <button type="button" data-action="close-duplicates">Close duplicates</button>
+    <button type="button" data-action="sort-tabs">Sort by site</button>
+    <button type="button" data-action="close-right">Close tabs to the right</button>
+    <button type="button" data-action="mute-others">Mute other tabs</button>
+    <button type="button" data-action="unmute-all">Unmute all tabs</button>
+    <button type="button" data-action="open-settings">All features…</button>
+  </div>
+
+  <p id="status" class="muted" role="status"></p>
+  <p class="muted hint"><kbd>Alt+Shift+X</kbd> opens the command palette · <kbd>Alt+Shift+K</kbd> lists shortcuts.</p>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

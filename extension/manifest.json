@@ -1,0 +1,66 @@
+{
+  "manifest_version": 3,
+  "name": "Browsekit",
+  "version": "1.0.0",
+  "description": "A modular toolkit of small, toggleable power-user features for every website.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": ["storage", "tabs", "clipboardWrite"],
+  "background": {
+    "service_worker": "src/background.js",
+    "scripts": ["src/background.js"]
+  },
+  "commands": {
+    "command-palette": { "description": "Open the command palette" },
+    "link-hints": { "description": "Show link hints" },
+    "reader-mode": { "description": "Toggle reader mode" },
+    "dark-mode": { "description": "Toggle dark mode on this site" }
+  },
+  "action": {
+    "default_title": "Browsekit",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    },
+    "default_popup": "popup/popup.html"
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "run_at": "document_idle",
+      "js": [
+        "src/core.js",
+        "src/features/reading.js",
+        "src/features/links.js",
+        "src/features/media.js",
+        "src/features/forms.js",
+        "src/features/keyboard.js",
+        "src/features/cleanup.js",
+        "src/features/productivity.js",
+        "src/features/tables.js",
+        "src/features/sites.js",
+        "src/runner.js"
+      ]
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "{cb2924fa-d82d-4ba1-93fe-d40c9ffea53d}",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    },
+    "gecko_android": {
+      "strict_min_version": "142.0"
+    }
+  }
+}

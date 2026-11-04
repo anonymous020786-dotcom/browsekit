@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Browsekit settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Browsekit</h1>
+      <p id="summary" class="muted"></p>
+    </div>
+    <div class="actions">
+      <input id="filter" type="search" placeholder="Filter features…" aria-label="Filter features" autofocus>
+      <button id="export" type="button">Export</button>
+      <button id="import" type="button">Import</button>
+      <button id="reset" type="button">Reset to defaults</button>
+      <input id="import-file" type="file" accept="application/json,.json" hidden>
+    </div>
+  </header>
+  <p class="note">
+    Switching a feature on works in open tabs right away. Switching one off takes effect when you reload the page.
+    Want different keys, or shortcuts that work on every site? <button id="shortcuts" type="button" class="link">Set browser-level shortcuts</button>
+  </p>
+  <main id="features"></main>
+  <section class="category">
+    <h2>Turned off on these sites</h2>
+    <ul id="sites"></ul>
+  </section>
+  <script src="../src/core.js"></script>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

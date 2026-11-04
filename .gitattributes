@@ -1,0 +1,4 @@
+# LF everywhere, so builds from Windows and Linux checkouts produce byte-identical packages.
+* text=auto eol=lf
+*.png binary
+*.zip binary

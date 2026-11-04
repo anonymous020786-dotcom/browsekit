@@ -1,0 +1,163 @@
+# Push a tag like v1.2.0 (matching extension/manifest.json) to build, test and release.
+# Store publishing jobs are off until you opt in per store; see PUBLISHING.md.
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check the tag matches the manifest version
+        run: |
+          version=$(node -p "require('./extension/manifest.json').version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match manifest version $version"
+            exit 1
+          fi
+
+      - run: npm run check
+      - run: npm run build
+      - run: npm run lint:firefox
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+        env:
+          BROWSEKIT_EXTENSION: dist/chrome
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: browsekit-packages
+          path: dist/*.zip
+
+  github-release:
+    name: GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: browsekit-packages
+
+      - name: Create release with packages and checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          sha256sum browsekit-*.zip > SHA256SUMS.txt
+          gh release create "$GITHUB_REF_NAME" browsekit-*.zip SHA256SUMS.txt \
+            --title "Browsekit $GITHUB_REF_NAME" --generate-notes --verify-tag
+
+  publish-chrome:
+    name: Chrome Web Store
+    needs: build
+    if: vars.PUBLISH_CHROME == 'true'
+    runs-on: ubuntu-latest
+    environment: chrome-web-store
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: browsekit-packages
+
+      - name: Upload and publish
+        env:
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
+        run: |
+          set -euo pipefail
+          package=$(ls browsekit-chrome-*.zip)
+          token=$(curl -sf https://oauth2.googleapis.com/token \
+            -d client_id="$CLIENT_ID" -d client_secret="$CLIENT_SECRET" \
+            -d refresh_token="$REFRESH_TOKEN" -d grant_type=refresh_token | jq -r .access_token)
+          curl -sf -X PUT -H "Authorization: Bearer $token" -H "x-goog-api-version: 2" -T "$package" \
+            "https://www.googleapis.com/upload/chromewebstore/v1.1/items/$EXTENSION_ID" | tee upload.json
+          jq -e '.uploadState == "SUCCESS"' upload.json
+          curl -sf -X POST -H "Authorization: Bearer $token" -H "x-goog-api-version: 2" -H "Content-Length: 0" \
+            "https://www.googleapis.com/chromewebstore/v1.1/items/$EXTENSION_ID/publish"
+
+  publish-firefox:
+    name: Firefox Add-ons
+    needs: build
+    if: vars.PUBLISH_FIREFOX == 'true'
+    runs-on: ubuntu-latest
+    environment: firefox-addons
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: browsekit-packages
+          path: packages
+
+      - name: Submit the tested package for signing and listing
+        env:
+          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          unzip -q packages/browsekit-firefox-*.zip -d upload
+          npx web-ext sign --source-dir upload --channel listed \
+            --api-key "$AMO_JWT_ISSUER" --api-secret "$AMO_JWT_SECRET"
+
+  publish-edge:
+    name: Microsoft Edge Add-ons
+    needs: build
+    if: vars.PUBLISH_EDGE == 'true'
+    runs-on: ubuntu-latest
+    environment: edge-addons
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: browsekit-packages
+
+      - name: Upload, wait for processing, then publish
+        env:
+          CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
+          API_KEY: ${{ secrets.EDGE_API_KEY }}
+          PRODUCT_ID: ${{ vars.EDGE_PRODUCT_ID }}
+        run: |
+          set -euo pipefail
+          api="https://api.addons.microsoftedge.microsoft.com/v1/products/$PRODUCT_ID/submissions"
+          auth=(-H "Authorization: ApiKey $API_KEY" -H "X-ClientID: $CLIENT_ID")
+          package=$(ls browsekit-chrome-*.zip)
+
+          curl -sf -D upload-headers.txt -o /dev/null -X POST "${auth[@]}" -H "Content-Type: application/zip" \
+            -T "$package" "$api/draft/package"
+          operation=$(grep -i '^location:' upload-headers.txt | sed 's/.*operations\///' | tr -d '\r')
+
+          for attempt in $(seq 1 40); do
+            status=$(curl -sf "${auth[@]}" "$api/draft/package/operations/$operation" | jq -r .status)
+            echo "Package processing: $status"
+            [ "$status" = "Succeeded" ] && break
+            [ "$status" = "Failed" ] && exit 1
+            sleep 15
+          done
+          [ "$status" = "Succeeded" ]
+
+          curl -sf -X POST "${auth[@]}" -H "Content-Type: application/json" \
+            -d "{\"notes\": \"Release $GITHUB_REF_NAME\"}" "$api"
